@@ -46,12 +46,19 @@ export default function injectIntl(WrappedComponent, options = {}) {
             return this.refs.wrappedInstance;
         }
 
+        translate = (id, value) => {
+            if (typeof id === 'string') {
+                return this.context.intl.formatMessage({ id }, value);
+            }
+            return this.context.intl.formatMessage(id, value);
+        };
         render() {
             return (
                 <WrappedComponent
                     {...this.props}
                     {...{[intlPropName]: this.context.intl}}
                     ref={withRef ? 'wrappedInstance' : null}
+                    _t={this.translate}
                 />
             );
         }
