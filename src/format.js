@@ -208,7 +208,7 @@ export function formatMessage(config, state, messageDescriptor = {}, values = {}
             formattedMessage = formatter.format(values);
         } catch (e) {
             if (process.env.NODE_ENV !== 'production') {
-                console.error(
+                console.warn(
                     `[React Intl] Error formatting message: "${id}" for locale: "${locale}"` +
                     (defaultMessage ? ', using default message as fallback.' : '') +
                     `\n${e}`
@@ -240,7 +240,7 @@ export function formatMessage(config, state, messageDescriptor = {}, values = {}
             formattedMessage = formatter.format(values);
         } catch (e) {
             if (process.env.NODE_ENV !== 'production') {
-                console.error(
+                console.warn(
                     `[React Intl] Error formatting the default message for: "${id}"` +
                     `\n${e}`
                 );
@@ -250,7 +250,7 @@ export function formatMessage(config, state, messageDescriptor = {}, values = {}
 
     if (!formattedMessage) {
         if (process.env.NODE_ENV !== 'production') {
-            console.error(
+            console.warn(
                 `[React Intl] Cannot format message: "${id}", ` +
                 `using message ${message || defaultMessage ? 'source' : 'id'} as fallback.`
             );

@@ -10,11 +10,13 @@ describe('format API', () => {
     const IRF_THRESHOLDS = {...IntlRelativeFormat.thresholds};
 
     let consoleError;
+    let consoleWarn;
     let config;
     let state;
 
     beforeEach(() => {
         consoleError = spyOn(console, 'error');
+        consoleWarn = spyOn(console, 'warn');
 
         config = {
             locale: 'en',
@@ -81,6 +83,7 @@ describe('format API', () => {
 
     afterEach(() => {
         process.env.NODE_ENV = NODE_ENV;
+        consoleWarn.restore();
         consoleError.restore();
     });
 
@@ -730,8 +733,8 @@ describe('format API', () => {
                     defaultMessage: messages.with_arg,
                 }, values)).toBe(mf.format(values));
 
-                expect(consoleError.calls.length).toBe(1);
-                expect(consoleError.calls[0].arguments[0]).toContain(
+                expect(consoleWarn.calls.length).toBe(1);
+                expect(consoleWarn.calls[0].arguments[0]).toContain(
                     `[React Intl] Missing message: "${id}" for locale: "${locale}", using default message as fallback.`
                 );
             });
@@ -746,11 +749,11 @@ describe('format API', () => {
                     defaultMessage: messages.missing,
                 }, values)).toBe(id);
 
-                expect(consoleError.calls.length).toBe(2);
-                expect(consoleError.calls[0].arguments[0]).toContain(
+                expect(consoleWarn.calls.length).toBe(2);
+                expect(consoleWarn.calls[0].arguments[0]).toContain(
                     `[React Intl] Missing message: "${id}" for locale: "${locale}"`
                 );
-                expect(consoleError.calls[1].arguments[0]).toContain(
+                expect(consoleWarn.calls[1].arguments[0]).toContain(
                     `[React Intl] Cannot format message: "${id}", using message id as fallback.`
                 );
             });
@@ -766,8 +769,8 @@ describe('format API', () => {
                     defaultMessage: messages.with_arg,
                 }, values)).toBe(mf.format(values));
 
-                expect(consoleError.calls.length).toBe(1);
-                expect(consoleError.calls[0].arguments[0]).toContain(
+                expect(consoleWarn.calls.length).toBe(1);
+                expect(consoleWarn.calls[0].arguments[0]).toContain(
                     `[React Intl] Error formatting message: "${id}" for locale: "${locale}", using default message as fallback.`
                 );
             });
@@ -783,8 +786,8 @@ describe('format API', () => {
                     defaultMessage: messages.with_arg,
                 }, values)).toBe(mf.format(values));
 
-                expect(consoleError.calls.length).toBe(1);
-                expect(consoleError.calls[0].arguments[0]).toContain(
+                expect(consoleWarn.calls.length).toBe(1);
+                expect(consoleWarn.calls[0].arguments[0]).toContain(
                     `[React Intl] Error formatting message: "${id}" for locale: "${locale}", using default message as fallback.`
                 );
             });
@@ -798,14 +801,14 @@ describe('format API', () => {
                     defaultMessage: messages.invalid,
                 })).toBe(messages[id]);
 
-                expect(consoleError.calls.length).toBe(3);
-                expect(consoleError.calls[0].arguments[0]).toContain(
+                expect(consoleWarn.calls.length).toBe(3);
+                expect(consoleWarn.calls[0].arguments[0]).toContain(
                     `[React Intl] Error formatting message: "${id}" for locale: "${locale}"`
                 );
-                expect(consoleError.calls[1].arguments[0]).toContain(
+                expect(consoleWarn.calls[1].arguments[0]).toContain(
                     `[React Intl] Error formatting the default message for: "${id}"`
                 );
-                expect(consoleError.calls[2].arguments[0]).toContain(
+                expect(consoleWarn.calls[2].arguments[0]).toContain(
                     `[React Intl] Cannot format message: "${id}", using message source as fallback.`
                 );
             });
@@ -819,11 +822,11 @@ describe('format API', () => {
                     defaultMessage: messages.missing,
                 })).toBe(messages[id]);
 
-                expect(consoleError.calls.length).toBe(2);
-                expect(consoleError.calls[0].arguments[0]).toContain(
+                expect(consoleWarn.calls.length).toBe(2);
+                expect(consoleWarn.calls[0].arguments[0]).toContain(
                     `[React Intl] Error formatting message: "${id}" for locale: "${locale}"`
                 );
-                expect(consoleError.calls[1].arguments[0]).toContain(
+                expect(consoleWarn.calls[1].arguments[0]).toContain(
                     `[React Intl] Cannot format message: "${id}", using message source as fallback.`
                 );
             });
@@ -839,14 +842,14 @@ describe('format API', () => {
                     defaultMessage: messages.invalid,
                 })).toBe(messages.invalid);
 
-                expect(consoleError.calls.length).toBe(3);
-                expect(consoleError.calls[0].arguments[0]).toContain(
+                expect(consoleWarn.calls.length).toBe(3);
+                expect(consoleWarn.calls[0].arguments[0]).toContain(
                     `[React Intl] Missing message: "${id}" for locale: "${locale}", using default message as fallback.`
                 );
-                expect(consoleError.calls[1].arguments[0]).toContain(
+                expect(consoleWarn.calls[1].arguments[0]).toContain(
                     `[React Intl] Error formatting the default message for: "${id}"`
                 );
-                expect(consoleError.calls[2].arguments[0]).toContain(
+                expect(consoleWarn.calls[2].arguments[0]).toContain(
                     `[React Intl] Cannot format message: "${id}", using message source as fallback.`
                 );
             });
@@ -856,11 +859,11 @@ describe('format API', () => {
 
                 expect(formatMessage({id: id})).toBe(id);
 
-                expect(consoleError.calls.length).toBe(2);
-                expect(consoleError.calls[0].arguments[0]).toContain(
+                expect(consoleWarn.calls.length).toBe(2);
+                expect(consoleWarn.calls[0].arguments[0]).toContain(
                     `[React Intl] Missing message: "${id}" for locale: "${config.locale}"`
                 );
-                expect(consoleError.calls[1].arguments[0]).toContain(
+                expect(consoleWarn.calls[1].arguments[0]).toContain(
                     `[React Intl] Cannot format message: "${id}", using message id as fallback.`
                 );
             });
@@ -874,11 +877,11 @@ describe('format API', () => {
                     defaultMessage: messages[id],
                 })).toBe(id);
 
-                expect(consoleError.calls.length).toBe(2);
-                expect(consoleError.calls[0].arguments[0]).toContain(
+                expect(consoleWarn.calls.length).toBe(2);
+                expect(consoleWarn.calls[0].arguments[0]).toContain(
                     `[React Intl] Missing message: "${id}" for locale: "${locale}"`
                 );
-                expect(consoleError.calls[1].arguments[0]).toContain(
+                expect(consoleWarn.calls[1].arguments[0]).toContain(
                     `[React Intl] Cannot format message: "${id}", using message id as fallback.`
                 );
             });
