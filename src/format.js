@@ -223,7 +223,7 @@ export function formatMessage(config, state, messageDescriptor = {}, values = {}
             if (!defaultMessage ||
                 (locale && locale.toLowerCase() !== defaultLocale.toLowerCase())) {
 
-                console.error(
+                console.warn(
                     `[React Intl] Missing message: "${id}" for locale: "${locale}"` +
                     (defaultMessage ? ', using default message as fallback.' : '')
                 );
