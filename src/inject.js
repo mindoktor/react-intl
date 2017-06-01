@@ -47,10 +47,13 @@ export default function injectIntl(WrappedComponent, options = {}) {
         }
 
         translate = (id, value) => {
-            if (typeof id === 'string') {
+            if (typeof id === 'string' && id !== '') {
                 return this.context.intl.formatMessage({ id }, value);
             }
-            return this.context.intl.formatMessage(id, value);
+            //return this.context.intl.formatMessage(id, value);
+
+            // something's iffy with that _t( <id> )
+            return 'invalid translation key';
         };
         render() {
             return (
