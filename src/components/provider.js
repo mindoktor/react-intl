@@ -19,6 +19,11 @@ import {hasLocaleData} from '../locale-data-registry';
 const intlConfigPropNames = Object.keys(intlConfigPropTypes);
 const intlFormatPropNames = Object.keys(intlFormatPropTypes);
 
+// _t: store local ref
+const intlInstance = {
+    intl: {},
+};
+
 // These are not a static property on the `IntlProvider` class so the intl
 // config values can be inherited from an <IntlProvider> ancestor.
 const defaultProps = {
@@ -90,6 +95,9 @@ export default class IntlProvider extends Component {
                 return this._didDisplay ? Date.now() : initialNow;
             },
         };
+
+        // _t: add intl reference
+        intlInstance.intl = this.getChildContext().intl;
     }
 
     getConfig() {
@@ -174,4 +182,15 @@ export default class IntlProvider extends Component {
     render() {
         return Children.only(this.props.children);
     }
+}
+
+// context/HOC-free translation function:
+export function _t(id, value) {
+    if (typeof id === 'string' && id !== '') {
+        if (!intlInstance.intl.formatMessage) {
+            return id;
+        }
+        return intlInstance.intl.formatMessage({ id: id }, value);
+    }
+    return 'Invalid key';
 }
