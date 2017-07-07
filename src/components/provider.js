@@ -184,13 +184,16 @@ export default class IntlProvider extends Component {
     }
 }
 
-// context/HOC-free translation function:
-export function _t(id, value) {
-    if (typeof id === 'string' && id !== '') {
-        if (!intlInstance.intl.formatMessage) {
-            return id;
+// injectIntl-free translation:
+export function _t(msg, value) {
+    if (msg) {
+        // Handle both strings and message descriptors
+        const id = (typeof msg === 'string') ? msg : msg.id;
+        if (intlInstance.intl.formatMessage) {
+            return intlInstance.intl.formatMessage({ id }, value);
         }
-        return intlInstance.intl.formatMessage({ id: id }, value);
+        return id;
     }
+
     return 'Invalid key';
 }
