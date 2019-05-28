@@ -10,11 +10,13 @@ describe('format API', () => {
     const IRF_THRESHOLDS = {...IntlRelativeFormat.thresholds};
 
     let consoleError;
+    let consoleWarn;
     let config;
     let state;
 
     beforeEach(() => {
         consoleError = spyOn(console, 'error');
+        consoleWarn = spyOn(console, 'warn');
 
         config = {
             locale: 'en',
@@ -66,6 +68,8 @@ describe('format API', () => {
 
             defaultLocale: 'en',
             defaultFormats: {},
+
+            onError: consoleError,
         };
 
         state = {
@@ -81,6 +85,7 @@ describe('format API', () => {
 
     afterEach(() => {
         process.env.NODE_ENV = NODE_ENV;
+        consoleWarn.restore();
         consoleError.restore();
     });
 
@@ -132,6 +137,22 @@ describe('format API', () => {
         it('formats date ms timestamp values', () => {
             const timestamp = Date.now();
             expect(formatDate(timestamp)).toBe(df.format(timestamp));
+        });
+
+        it('uses the time zone specified by the provider', () => {
+            const timestamp = Date.now();
+            config.timeZone =  'Pacific/Wake';
+            formatDate = f.formatDate.bind(null, config, state);
+            const wakeDf = new Intl.DateTimeFormat(config.locale, {
+                timeZone: 'Pacific/Wake',
+            });
+            expect(formatDate(timestamp)).toBe(wakeDf.format(timestamp));
+            config.timeZone = 'Asia/Shanghai';
+            formatDate = f.formatDate.bind(null, config, state);
+            const shanghaiDf = new Intl.DateTimeFormat(config.locale, {
+                timeZone: 'Asia/Shanghai',
+            });
+            expect(formatDate(timestamp)).toBe(shanghaiDf.format(timestamp));
         });
 
         describe('options', () => {
@@ -187,6 +208,16 @@ describe('format API', () => {
                     `[React Intl] No date format named: ${format}`
                 );
             });
+
+            it('uses time zone specified in options over the one passed through by the provider', () => {
+                const timestamp = Date.now();
+                config.timeZone = 'Pacific/Wake';
+                formatDate = f.formatDate.bind(null, config, state);
+                const shanghaiDf = new Intl.DateTimeFormat(config.locale, {
+                    timeZone: 'Asia/Shanghai',
+                });
+                expect(formatDate(timestamp, {timeZone: 'Asia/Shanghai'})).toBe(shanghaiDf.format(timestamp));
+            });
         });
     });
 
@@ -234,6 +265,26 @@ describe('format API', () => {
         it('formats date ms timestamp values', () => {
             const timestamp = Date.now();
             expect(formatTime(timestamp)).toBe(df.format(timestamp));
+        });
+
+        it('uses the time zone specified by the provider', () => {
+            const timestamp = Date.now();
+            config.timeZone = 'Africa/Johannesburg';
+            formatTime = f.formatTime.bind(null, config, state);
+            const johannesburgDf = new Intl.DateTimeFormat(config.locale, {
+                hour: 'numeric',
+                minute: 'numeric',
+                timeZone: 'Africa/Johannesburg',
+            });
+            expect(formatTime(timestamp)).toBe(johannesburgDf.format(timestamp));
+            config.timeZone = 'America/Chicago';
+            formatTime = f.formatTime.bind(null, config, state);
+            const chicagoDf = new Intl.DateTimeFormat(config.locale, {
+                hour: 'numeric',
+                minute: 'numeric',
+                timeZone: 'America/Chicago',
+            });
+            expect(formatTime(timestamp)).toBe(chicagoDf.format(timestamp));
         });
 
         describe('options', () => {
@@ -319,6 +370,18 @@ describe('format API', () => {
                 df = new Intl.DateTimeFormat(locale, {hour});
                 expect(formatTime(date, {hour})).toBe(df.format(date));
             });
+
+            it('uses time zone specified in options over the one passed through by the provider', () => {
+                const timestamp = Date.now();
+                config.timeZone = 'Africa/Johannesburg';
+                formatTime = f.formatTime.bind(null, config, state);
+                const chicagoDf = new Intl.DateTimeFormat(config.locale, {
+                    hour: 'numeric',
+                    minute: 'numeric',
+                    timeZone: 'America/Chicago',
+                });
+                expect(formatTime(timestamp, {timeZone: 'America/Chicago'})).toBe(chicagoDf.format(timestamp));
+            });
         });
     });
 
@@ -366,6 +429,11 @@ describe('format API', () => {
             expect(formatRelative(timestamp)).toBe(rf.format(timestamp, {now}));
         });
 
+        it('formats with short format', () => {
+            const timestamp = now - (1000 * 59);
+            expect(formatRelative(timestamp, {units: 'second-short'})).toBe('59 sec. ago');
+        });
+
         it('formats with the expected thresholds', () => {
             const timestamp = now - (1000 * 59);
             expect(IntlRelativeFormat.thresholds).toEqual(IRF_THRESHOLDS);
@@ -383,14 +451,15 @@ describe('format API', () => {
 
             it('accepts valid IntlRelativeFormat options', () => {
                 expect(() => formatRelative(0, {units: 'second'})).toNotThrow();
+                expect(() => formatRelative(0, {units: 'second-short'})).toNotThrow();
             });
 
-            it('fallsback and wanrs on invalid IntlRelativeFormat options', () => {
+            it('falls back and warns on invalid IntlRelativeFormat options', () => {
                 expect(formatRelative(0, {units: 'invalid'})).toBe(String(new Date(0)));
                 expect(consoleError.calls.length).toBe(1);
-                expect(consoleError.calls[0].arguments[0]).toBe(
-                    '[React Intl] Error formatting relative time.\nError: "invalid" is not a valid IntlRelativeFormat `units` value, it must be one of: "second", "minute", "hour", "day", "month", "year"'
-                );
+                expect(consoleError.calls[0].arguments[0].startsWith(
+                    '[React Intl] Error formatting relative time.\nError: "invalid" is not a valid IntlRelativeFormat `units` value, it must be one of'
+                )).toBeTruthy();
             });
 
             it('uses configured named formats', () => {
@@ -730,8 +799,8 @@ describe('format API', () => {
                     defaultMessage: messages.with_arg,
                 }, values)).toBe(mf.format(values));
 
-                expect(consoleError.calls.length).toBe(1);
-                expect(consoleError.calls[0].arguments[0]).toContain(
+                expect(consoleWarn.calls.length).toBe(1);
+                expect(consoleWarn.calls[0].arguments[0]).toContain(
                     `[React Intl] Missing message: "${id}" for locale: "${locale}", using default message as fallback.`
                 );
             });
@@ -746,11 +815,11 @@ describe('format API', () => {
                     defaultMessage: messages.missing,
                 }, values)).toBe(id);
 
-                expect(consoleError.calls.length).toBe(2);
-                expect(consoleError.calls[0].arguments[0]).toContain(
+                expect(consoleWarn.calls.length).toBe(2);
+                expect(consoleWarn.calls[0].arguments[0]).toContain(
                     `[React Intl] Missing message: "${id}" for locale: "${locale}"`
                 );
-                expect(consoleError.calls[1].arguments[0]).toContain(
+                expect(consoleWarn.calls[1].arguments[0]).toContain(
                     `[React Intl] Cannot format message: "${id}", using message id as fallback.`
                 );
             });
@@ -766,8 +835,8 @@ describe('format API', () => {
                     defaultMessage: messages.with_arg,
                 }, values)).toBe(mf.format(values));
 
-                expect(consoleError.calls.length).toBe(1);
-                expect(consoleError.calls[0].arguments[0]).toContain(
+                expect(consoleWarn.calls.length).toBe(1);
+                expect(consoleWarn.calls[0].arguments[0]).toContain(
                     `[React Intl] Error formatting message: "${id}" for locale: "${locale}", using default message as fallback.`
                 );
             });
@@ -783,8 +852,8 @@ describe('format API', () => {
                     defaultMessage: messages.with_arg,
                 }, values)).toBe(mf.format(values));
 
-                expect(consoleError.calls.length).toBe(1);
-                expect(consoleError.calls[0].arguments[0]).toContain(
+                expect(consoleWarn.calls.length).toBe(1);
+                expect(consoleWarn.calls[0].arguments[0]).toContain(
                     `[React Intl] Error formatting message: "${id}" for locale: "${locale}", using default message as fallback.`
                 );
             });
@@ -798,14 +867,14 @@ describe('format API', () => {
                     defaultMessage: messages.invalid,
                 })).toBe(messages[id]);
 
-                expect(consoleError.calls.length).toBe(3);
-                expect(consoleError.calls[0].arguments[0]).toContain(
+                expect(consoleWarn.calls.length).toBe(3);
+                expect(consoleWarn.calls[0].arguments[0]).toContain(
                     `[React Intl] Error formatting message: "${id}" for locale: "${locale}"`
                 );
-                expect(consoleError.calls[1].arguments[0]).toContain(
+                expect(consoleWarn.calls[1].arguments[0]).toContain(
                     `[React Intl] Error formatting the default message for: "${id}"`
                 );
-                expect(consoleError.calls[2].arguments[0]).toContain(
+                expect(consoleWarn.calls[2].arguments[0]).toContain(
                     `[React Intl] Cannot format message: "${id}", using message source as fallback.`
                 );
             });
@@ -819,11 +888,11 @@ describe('format API', () => {
                     defaultMessage: messages.missing,
                 })).toBe(messages[id]);
 
-                expect(consoleError.calls.length).toBe(2);
-                expect(consoleError.calls[0].arguments[0]).toContain(
+                expect(consoleWarn.calls.length).toBe(2);
+                expect(consoleWarn.calls[0].arguments[0]).toContain(
                     `[React Intl] Error formatting message: "${id}" for locale: "${locale}"`
                 );
-                expect(consoleError.calls[1].arguments[0]).toContain(
+                expect(consoleWarn.calls[1].arguments[0]).toContain(
                     `[React Intl] Cannot format message: "${id}", using message source as fallback.`
                 );
             });
@@ -839,14 +908,14 @@ describe('format API', () => {
                     defaultMessage: messages.invalid,
                 })).toBe(messages.invalid);
 
-                expect(consoleError.calls.length).toBe(3);
-                expect(consoleError.calls[0].arguments[0]).toContain(
+                expect(consoleWarn.calls.length).toBe(3);
+                expect(consoleWarn.calls[0].arguments[0]).toContain(
                     `[React Intl] Missing message: "${id}" for locale: "${locale}", using default message as fallback.`
                 );
-                expect(consoleError.calls[1].arguments[0]).toContain(
+                expect(consoleWarn.calls[1].arguments[0]).toContain(
                     `[React Intl] Error formatting the default message for: "${id}"`
                 );
-                expect(consoleError.calls[2].arguments[0]).toContain(
+                expect(consoleWarn.calls[2].arguments[0]).toContain(
                     `[React Intl] Cannot format message: "${id}", using message source as fallback.`
                 );
             });
@@ -856,11 +925,11 @@ describe('format API', () => {
 
                 expect(formatMessage({id: id})).toBe(id);
 
-                expect(consoleError.calls.length).toBe(2);
-                expect(consoleError.calls[0].arguments[0]).toContain(
+                expect(consoleWarn.calls.length).toBe(2);
+                expect(consoleWarn.calls[0].arguments[0]).toContain(
                     `[React Intl] Missing message: "${id}" for locale: "${config.locale}"`
                 );
-                expect(consoleError.calls[1].arguments[0]).toContain(
+                expect(consoleWarn.calls[1].arguments[0]).toContain(
                     `[React Intl] Cannot format message: "${id}", using message id as fallback.`
                 );
             });
@@ -874,11 +943,11 @@ describe('format API', () => {
                     defaultMessage: messages[id],
                 })).toBe(id);
 
-                expect(consoleError.calls.length).toBe(2);
-                expect(consoleError.calls[0].arguments[0]).toContain(
+                expect(consoleWarn.calls.length).toBe(2);
+                expect(consoleWarn.calls[0].arguments[0]).toContain(
                     `[React Intl] Missing message: "${id}" for locale: "${locale}"`
                 );
-                expect(consoleError.calls[1].arguments[0]).toContain(
+                expect(consoleWarn.calls[1].arguments[0]).toContain(
                     `[React Intl] Cannot format message: "${id}", using message id as fallback.`
                 );
             });
