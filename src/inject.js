@@ -48,7 +48,7 @@ export default function injectIntl(WrappedComponent, options = {}) {
     // patch
     translate = (id, value) => {
       if (typeof id === 'string' && id !== '') {
-        return this.context.intl.formatMessage({ id }, value);
+        return this.context.intl.formatMessage.call(this, { id }, value);
       }
       // something's iffy with that _t( <id> )
       return 'invalid translation key';

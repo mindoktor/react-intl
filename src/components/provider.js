@@ -198,7 +198,7 @@ export function _t(msg, value) {
         // Handle both strings and message descriptors
         const id = (typeof msg === 'string') ? msg : msg.id;
         if (intlInstance.intl.formatMessage) {
-            return intlInstance.intl.formatMessage({ id }, value);
+            return intlInstance.intl.formatMessage.call(this, { id }, value);
         }
         return id;
     }
